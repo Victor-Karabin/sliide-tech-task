@@ -1,3 +1,23 @@
 <resources>
     <string name="app_name">Sliide tech task</string>
+
+    <!-- User Item -->
+    <string name="ago">ago</string>
+    <string name="sec_short">s</string>
+    <string name="min_short">m</string>
+    <string name="hour_short">h</string>
+    <string name="day_short">d</string>
+
+    <!-- Errors -->
+    <string name="common_error_occurred">Sorry, an error occurred. Please try again later.</string>
+
+    <!-- Empty -->
+    <string name="no_more_users">No more users. You can create a new one by click on \'+\' button or fetch new ones</string>
+    <string name="fetch">Fetch</string>
+
+    <!-- FAB -->
+    <string name="create_user">Create a new User</string>
+
+    <!-- Delete user dialog -->
+    <string name="confirm_delete_user">Are you sure you want to remove this user?</string>
 </resources>

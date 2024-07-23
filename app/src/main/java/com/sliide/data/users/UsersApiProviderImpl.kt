@@ -35,7 +35,7 @@ internal class UsersApiProviderImpl @Inject constructor(
         val moshiConverterFactory = MoshiConverterFactory.create(moshi)
 
         Retrofit.Builder()
-            .baseUrl(baseUrl.plus("/public/v2/"))
+            .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(moshiConverterFactory)
             .build()

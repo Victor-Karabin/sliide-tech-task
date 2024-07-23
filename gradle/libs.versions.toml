@@ -1,6 +1,6 @@
 [versions]
 android-compileSdk = "34"
-android-minSdk = "24"
+android-minSdk = "21"
 android-tagetSdk = "34"
 
 agp = "8.5.1"
@@ -11,7 +11,7 @@ coroutines = "1.7.3"
 immutableCollections = "0.3.7"
 datetime = "0.5.0"
 
-hilt = "2.50"
+hilt = "2.51.1"
 androidHilt = "1.2.0"
 
 androidCore = "1.13.1"
@@ -42,6 +42,7 @@ androidx-compose-navigation = { group = "androidx.navigation", name = "navigatio
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "compose" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "composeMaterial3" }
+androidx-lifecycle-runtime-compose-android = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose-android", version.ref = "lifecycle" }
 
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }

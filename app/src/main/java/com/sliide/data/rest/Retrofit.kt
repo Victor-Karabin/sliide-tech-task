@@ -39,3 +39,22 @@ internal suspend fun <T> wrapRequest(
         }
     }
 }
+
+internal suspend fun <T> wrapRequestNullableBody(
+    dispatcher: CoroutineDispatcher,
+    request: suspend () -> Response<T>
+): Result<T?> {
+    return withContext(dispatcher) {
+        try {
+            val response = request()
+            val body = response.body()
+            if (response.isSuccessful) {
+                Result.success(body)
+            } else {
+                Result.failure(response.toException())
+            }
+        } catch (ex: Exception) {
+            Result.failure(ex)
+        }
+    }
+}

@@ -3,6 +3,7 @@ package com.sliide.data.users
 import com.sliide.boundary.users.User
 import com.sliide.boundary.users.UsersRepo
 import com.sliide.data.rest.wrapRequest
+import com.sliide.data.rest.wrapRequestNullableBody
 import com.sliide.di.coroutines.IODispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Inject
@@ -24,7 +25,8 @@ internal class UsersRepoImpl @Inject constructor(
     }
 
     override suspend fun deleteUser(id: Long): Result<Unit> {
-        return wrapRequest(io) { api.delete(id) }
+        return wrapRequestNullableBody(io) { api.delete(id) }
+            .map { /*do nothing*/ }
     }
 
     companion object {

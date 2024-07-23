@@ -8,12 +8,12 @@ import retrofit2.http.Path
 
 internal interface UsersApi {
 
-    @GET("/users")
+    @GET("/public/v2/users")
     suspend fun listUsers(): Response<List<UserDto>>
 
-    @POST("/users")
+    @POST("/public/v2/users")
     suspend fun create(user: UserDto): Response<UserDto>
 
-    @DELETE("/users/{userId}")
+    @DELETE("/public/v2/users/{userId}")
     suspend fun delete(@Path("userId") userId: Long): Response<Unit>
 }
