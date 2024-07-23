@@ -1,3 +1,6 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+import org.jetbrains.kotlin.konan.properties.hasProperty
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -19,14 +22,24 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+
+        buildConfigField("String", "GO_REST_BASE_URL", "\"${property("goRestUrl")}\"")
+
+        val properties = gradleLocalProperties(rootDir, project.providers)
+        val accessTokenKey = "accessToken"
+        if (properties.hasProperty(accessTokenKey)) {
+            val authToken = properties.getProperty(accessTokenKey)
+            buildConfigField("String", "GO_AUTH_TOKEN", "\"$authToken\"")
+        } else {
+            project.logger.error("Error: Property '$accessTokenKey' not found in local.properties")
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
         }
     }
