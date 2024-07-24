@@ -1,4 +1,4 @@
-package com.sliide.ui
+package com.sliide.ui.common
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

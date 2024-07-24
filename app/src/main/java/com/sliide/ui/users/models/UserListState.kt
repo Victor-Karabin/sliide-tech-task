@@ -14,5 +14,5 @@ internal sealed class UserListState {
     data class Items(val items: ImmutableList<UserItem>) : UserListState()
 
     @Stable
-    data class Error(val message: String) : UserListState()
+    data class Error(val message: String = "") : UserListState()
 }

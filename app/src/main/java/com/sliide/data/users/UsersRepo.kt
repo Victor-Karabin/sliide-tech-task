@@ -1,4 +1,6 @@
-package com.sliide.boundary.users
+package com.sliide.data.users
+
+import com.sliide.domain.users.models.User
 
 interface UsersRepo {
 

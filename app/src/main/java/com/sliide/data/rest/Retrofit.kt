@@ -4,21 +4,12 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import retrofit2.Response
 
-internal fun <T> Response<T>.toException(): Exception {
-    return IllegalStateException(collectLogData())
-}
-
-private fun <T> Response<T>.collectLogData(): String {
-    val raw = this.raw()
-
-    return StringBuilder()
-        .append("\nrequest: ")
-        .append(raw.request.url)
-        .append("\nresponse: ")
-        .append(code())
-        .append("\n")
-        .append(errorBody()?.string() ?: body()?.toString())
-        .toString()
+internal fun <T> Response<T>.toThrowable(): Throwable {
+    return RestThrowable(
+        code = this.code(),
+        url = this.raw().request.url.toString(),
+        body = errorBody()?.string() ?: body()?.toString()
+    )
 }
 
 internal suspend fun <T> wrapRequest(
@@ -32,7 +23,7 @@ internal suspend fun <T> wrapRequest(
             if (response.isSuccessful && body != null) {
                 Result.success(body)
             } else {
-                Result.failure(response.toException())
+                Result.failure(response.toThrowable())
             }
         } catch (ex: Exception) {
             Result.failure(ex)
@@ -51,7 +42,7 @@ internal suspend fun <T> wrapRequestNullableBody(
             if (response.isSuccessful) {
                 Result.success(body)
             } else {
-                Result.failure(response.toException())
+                Result.failure(response.toThrowable())
             }
         } catch (ex: Exception) {
             Result.failure(ex)

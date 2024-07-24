@@ -50,10 +50,10 @@ internal fun UsersList(
 @Composable
 private fun PreviewUsersList() {
     val items = persistentListOf(
-        UserItem(id = 1L, name = "Harry Potter", "harry.potter@gmail.com", "30s ago"),
-        UserItem(id = 2L, name = "Hermione Granger", "hermione.granger@yahoo.com", ""),
-        UserItem(id = 3L, name = "Ron Weasley", "ronwh@aol.com", "1m ago"),
-        UserItem(id = 4L, name = "Tom Riddle", "tom.marvolo.riddle@outlook.com", "1h 32m ago"),
+        UserItem(id = 1L, name = "Harry Potter", "harry.potter@gmail.com", "now"),
+        UserItem(id = 2L, name = "Hermione Granger", "hermione.granger@yahoo.com", "2m ago"),
+        UserItem(id = 3L, name = "Ron Weasley", "ronwh@aol.com", "10m ago"),
+        UserItem(id = 4L, name = "Tom Riddle", "tom.marvolo.riddle@outlook.com", "1h ago"),
         UserItem(
             id = 5L,
             name = "Albus Percival Wulfric Brian Dumbledore",

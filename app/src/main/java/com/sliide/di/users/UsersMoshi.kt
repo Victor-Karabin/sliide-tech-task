@@ -1,7 +1,7 @@
-package com.sliide.di.coroutines
+package com.sliide.di.users
 
 import javax.inject.Qualifier
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class IODispatcher
+annotation class UsersMoshi

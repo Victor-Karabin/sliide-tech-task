@@ -28,47 +28,54 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sliide.BuildConfig
 import com.sliide.R
-import com.sliide.ui.SingleEventEffect
+import com.sliide.ui.common.SingleEventEffect
+import com.sliide.ui.users.components.EmptyUsersListPlaceholder
+import com.sliide.ui.common.components.ErrorPlaceholder
 import com.sliide.ui.extensions.isScrollingUp
 import com.sliide.ui.users.components.CreateUserDialog
 import com.sliide.ui.users.components.DeleteUserDialog
-import com.sliide.ui.users.components.EmptyPlaceholder
-import com.sliide.ui.users.components.ErrorPlaceholder
 import com.sliide.ui.users.components.UsersList
 import com.sliide.ui.users.models.UserItem
-import com.sliide.ui.users.models.UserListDialogs
+import com.sliide.ui.users.models.UserListDialog
 import com.sliide.ui.users.models.UserListState
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 internal fun UserListScreen(
-    viewModel: UserListViewModel, close: () -> Unit, modifier: Modifier = Modifier
+    viewModel: UserListViewModel,
+    close: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.refreshUsers() }
+    LifecycleEventEffect(Lifecycle.Event.ON_CREATE) { viewModel.refreshUsers() }
 
     val context = LocalContext.current
-    val errorMessage = stringResource(id = R.string.common_error_occurred)
+    val unknownError = stringResource(id = R.string.common_error_occurred)
 
-    SingleEventEffect(sideEffectFlow = viewModel.error) { throwable ->
-        val message = if (BuildConfig.DEBUG) throwable.localizedMessage else errorMessage
-        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-        close()
+    SingleEventEffect(sideEffectFlow = viewModel.unknownError) {
+        Toast.makeText(context, unknownError, Toast.LENGTH_LONG).show()
     }
 
     val dialog by viewModel.dialogs.collectAsStateWithLifecycle()
 
     when (val type = dialog) {
-        UserListDialogs.CreateUser -> CreateUserDialog(
+        is UserListDialog.CreateUser -> CreateUserDialog(
+            name = type.name,
+            email = type.email,
+            nameError = type.nameError,
+            emailError = type.emailError,
             onDismissRequest = viewModel::hideDialog,
-            onConfirmClick = viewModel::onCreateClick
+            onNameChanged = viewModel::onNameChanged,
+            onEmailChanged = viewModel::onEmailChanged,
+            onCreateClick = viewModel::onCreateClick
         )
 
-        is UserListDialogs.DeleteUser -> DeleteUserDialog(onDismissRequest = viewModel::hideDialog,
-            onConfirmClick = { viewModel.onDeleteClick(type.userId) })
+        is UserListDialog.DeleteUser -> DeleteUserDialog(
+            onDismissRequest = viewModel::hideDialog,
+            onConfirmClick = { viewModel.onDeleteClick(type.userId) }
+        )
 
-        UserListDialogs.None -> Unit
+        UserListDialog.None -> Unit
     }
 
     val state by viewModel.screenState.collectAsStateWithLifecycle()
@@ -76,6 +83,7 @@ internal fun UserListScreen(
     UserListScreen(
         modifier = modifier,
         state = state,
+        onCloseClick = close,
         onLongClick = viewModel::onLongClick,
         onFabClick = viewModel::onFabClick,
         onFetchClick = viewModel::refreshUsers
@@ -85,6 +93,7 @@ internal fun UserListScreen(
 @Composable
 private fun UserListScreen(
     state: UserListState,
+    onCloseClick: () -> Unit,
     onLongClick: (UserItem) -> Unit,
     onFabClick: () -> Unit,
     onFetchClick: () -> Unit,
@@ -94,7 +103,8 @@ private fun UserListScreen(
     val isScrollingUp by listState.isScrollingUp()
 
     Scaffold(
-        modifier = modifier, floatingActionButton = {
+        modifier = modifier,
+        floatingActionButton = {
             AnimatedVisibility(
                 visible = isScrollingUp && state is UserListState.Items,
                 enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }),
@@ -118,17 +128,19 @@ private fun UserListScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding), contentAlignment = Alignment.Center
+                .padding(padding),
+            contentAlignment = Alignment.Center
         ) {
             when (state) {
                 is UserListState.Error -> ErrorPlaceholder(
                     modifier = Modifier.fillMaxSize(),
-                    message = state.message
+                    message = state.message,
+                    onCloseClick = onCloseClick
                 )
 
                 is UserListState.Items -> {
                     if (state.items.isEmpty()) {
-                        EmptyPlaceholder(
+                        EmptyUsersListPlaceholder(
                             modifier = Modifier.fillMaxSize(),
                             onFetchClick = onFetchClick
                         )
@@ -151,10 +163,13 @@ private fun UserListScreen(
 @Preview
 @Composable
 private fun PreviewUserListScreenLoading() {
-    UserListScreen(state = UserListState.Loading,
+    UserListScreen(
+        state = UserListState.Loading,
+        onCloseClick = {},
         onLongClick = {},
         onFabClick = {},
-        onFetchClick = {})
+        onFetchClick = {}
+    )
 }
 
 @Preview
@@ -175,6 +190,7 @@ private fun PreviewUserListScreenItems() {
 
     UserListScreen(
         state = UserListState.Items(items),
+        onCloseClick = {},
         onLongClick = {},
         onFabClick = {},
         onFetchClick = {}
@@ -186,6 +202,7 @@ private fun PreviewUserListScreenItems() {
 private fun PreviewUserListScreenNoItems() {
     UserListScreen(
         state = UserListState.Items(persistentListOf()),
+        onCloseClick = {},
         onLongClick = {},
         onFabClick = {},
         onFetchClick = {}
@@ -197,6 +214,7 @@ private fun PreviewUserListScreenNoItems() {
 private fun PreviewUserListScreenError() {
     UserListScreen(
         state = UserListState.Error(stringResource(R.string.common_error_occurred)),
+        onCloseClick = {},
         onLongClick = {},
         onFabClick = {},
         onFetchClick = {}

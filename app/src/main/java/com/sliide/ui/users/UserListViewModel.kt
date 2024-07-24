@@ -3,11 +3,16 @@ package com.sliide.ui.users
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sliide.BuildConfig
-import com.sliide.boundary.users.User
-import com.sliide.boundary.users.UsersRepo
+import com.sliide.common.flatMap
+import com.sliide.data.users.UsersRepo
+import com.sliide.domain.users.models.CreateUserError
+import com.sliide.domain.users.models.CreateUserThrowable
+import com.sliide.domain.users.models.User
+import com.sliide.domain.users.ValidateUserInputCase
+import com.sliide.ui.users.models.EmailError
+import com.sliide.ui.users.models.NameError
 import com.sliide.ui.users.models.UserItem
-import com.sliide.ui.users.models.UserListDialogs
+import com.sliide.ui.users.models.UserListDialog
 import com.sliide.ui.users.models.UserListState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
@@ -21,18 +26,19 @@ import javax.inject.Inject
 
 @HiltViewModel
 class UserListViewModel @Inject constructor(
-    private val usersRepo: UsersRepo
+    private val usersRepo: UsersRepo,
+    private val validateUserInputCase: ValidateUserInputCase
 ) : ViewModel() {
 
     private val mutableScreenState = MutableStateFlow<UserListState>(UserListState.Loading)
     internal val screenState = mutableScreenState.asStateFlow()
 
-    private val mutableDialogs = MutableStateFlow<UserListDialogs>(UserListDialogs.None)
+    private val mutableDialogs = MutableStateFlow<UserListDialog>(UserListDialog.None)
     internal val dialogs = mutableDialogs.asStateFlow()
 
-    private val errorChannel = Channel<Throwable>(capacity = Channel.BUFFERED)
-    internal val error: Flow<Throwable>
-        get() = errorChannel.receiveAsFlow()
+    private val unknownErrorChannel = Channel<Throwable>(capacity = Channel.BUFFERED)
+    internal val unknownError: Flow<Throwable>
+        get() = unknownErrorChannel.receiveAsFlow()
 
     internal fun refreshUsers() {
         viewModelScope.launch {
@@ -44,25 +50,25 @@ class UserListViewModel @Inject constructor(
                     mutableScreenState.value = UserListState.Items(items)
                 }
                 .onFailure { throwable ->
-                    val message = if (BuildConfig.DEBUG) throwable.message ?: "" else ""
-                    mutableScreenState.value = UserListState.Error(message)
+                    Log.d(TAG, "failed refresh users", throwable)
+                    mutableScreenState.value = UserListState.Error()
                 }
         }
     }
 
     internal fun onFabClick() {
-        mutableDialogs.value = UserListDialogs.CreateUser
+        mutableDialogs.value = UserListDialog.CreateUser.Empty
     }
 
     internal fun onLongClick(item: UserItem) {
-        mutableDialogs.value = UserListDialogs.DeleteUser(item.id)
+        mutableDialogs.value = UserListDialog.DeleteUser(item.id)
     }
 
     internal fun onDeleteClick(userId: Long) {
         viewModelScope.launch {
             hideDialog()
 
-            val state = mutableScreenState.value
+            val state = screenState.value
             if (state is UserListState.Items) {
                 val prevItems = state.items
                 mutableScreenState.value = UserListState.Loading
@@ -74,7 +80,8 @@ class UserListViewModel @Inject constructor(
                         mutableScreenState.value = UserListState.Items(filtered.toImmutableList())
                     }
                     .onFailure { throwable: Throwable ->
-                        errorChannel.send(throwable)
+                        Log.d(TAG, "failed delete user: $userId", throwable)
+                        unknownErrorChannel.send(throwable)
                         mutableScreenState.value = state
                     }
             } else {
@@ -83,38 +90,86 @@ class UserListViewModel @Inject constructor(
         }
     }
 
-    internal fun onCreateClick(name: String, email: String) {
+    internal fun hideDialog() {
+        if (dialogs.value == UserListDialog.None) {
+            Log.d(TAG, "invalid state. try to hide dialog for ${UserListDialog.None}")
+        }
+
+        mutableDialogs.value = UserListDialog.None
+    }
+
+    internal fun onNameChanged(name: String) {
+        val dialog = dialogs.value
+        if (dialog is UserListDialog.CreateUser) {
+            mutableDialogs.value = dialog.copy(name = name, nameError = NameError.None)
+        } else {
+            Log.d(TAG, "invalid state. try to change name for dialog: $dialog")
+        }
+    }
+
+    internal fun onEmailChanged(email: String) {
+        val dialog = dialogs.value
+        if (dialog is UserListDialog.CreateUser) {
+            mutableDialogs.value = dialog.copy(email = email, emailError = EmailError.None)
+        } else {
+            Log.d(TAG, "invalid state. try to change email for dialog: $dialog")
+        }
+    }
+
+    internal fun onCreateClick() {
         viewModelScope.launch {
-            hideDialog()
+            val state = screenState.value
+            val dialog = dialogs.value
 
-            val state = mutableScreenState.value
-            if (state is UserListState.Items) {
+            if (state is UserListState.Items && dialog is UserListDialog.CreateUser) {
                 val prevItems = state.items
-                mutableScreenState.value = UserListState.Loading
 
-                val create = User(id = Long.MIN_VALUE, name, email)
-                usersRepo.createUser(create)
+                val name = dialog.name.trim()
+                val email = dialog.email.trim()
+                validateUserInputCase(name, email)
+                    .flatMap { errors: Set<CreateUserError> ->
+                        if (errors.isEmpty()) {
+                            hideDialog()
+                            mutableScreenState.value = UserListState.Loading
+                            usersRepo.createUser(User(id = Long.MIN_VALUE, name, email))
+                        } else {
+                            Result.failure(CreateUserThrowable(errors))
+                        }
+                    }
                     .onSuccess { user ->
                         val items = prevItems.toMutableList()
                         items.add(0, user.toItem(""))
                         mutableScreenState.value = UserListState.Items(items.toImmutableList())
                     }
                     .onFailure { throwable: Throwable ->
-                        errorChannel.send(throwable)
+                        if (throwable is CreateUserThrowable) {
+                            handleErrors(dialog, throwable.errors)
+                        } else {
+                            Log.d(TAG, "failed create user: $name, $email", throwable)
+                            unknownErrorChannel.send(throwable)
+                        }
                         mutableScreenState.value = state
                     }
             } else {
-                Log.d(TAG, "invalid state. try to create for state: $state")
+                Log.d(TAG, "invalid state. try to create for state: $state, dialog: $dialog")
             }
         }
     }
 
-    internal fun hideDialog() {
-        if (mutableDialogs.value == UserListDialogs.None) {
-            Log.d(TAG, "invalid state. try to hide dialog for ${UserListDialogs.None}")
+    private fun handleErrors(dialog: UserListDialog.CreateUser, errors: Set<CreateUserError>) {
+        var nameError = NameError.None
+        var emailError = EmailError.None
+
+        errors.forEach { error ->
+            when (error) {
+                CreateUserError.NameRequired -> nameError = NameError.NameRequired
+                CreateUserError.EmailRequired -> emailError = EmailError.EmailRequired
+                CreateUserError.EmailExists -> emailError = EmailError.EmailExists
+                CreateUserError.EmailInvalid -> emailError = EmailError.EmailFormat
+            }
         }
 
-        mutableDialogs.value = UserListDialogs.None
+        mutableDialogs.value = dialog.copy(nameError = nameError, emailError = emailError)
     }
 
     private companion object {

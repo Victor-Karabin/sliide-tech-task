@@ -10,6 +10,7 @@
 
     <!-- Errors -->
     <string name="common_error_occurred">Sorry, an error occurred. Please try again later.</string>
+    <string name="close">Close</string>
 
     <!-- Empty -->
     <string name="no_more_users">No more users. You can create a new one by click on \'+\' button or fetch new ones</string>
@@ -20,4 +21,13 @@
 
     <!-- Delete user dialog -->
     <string name="confirm_delete_user">Are you sure you want to remove this user?</string>
+
+    <!-- Create user dialog -->
+    <string name="name">Name</string>
+    <string name="email">Email</string>
+    <string name="field_required">Field is required</string>
+    <string name="email_invalid_format">Invalid email format</string>
+    <string name="email_has_been_taken">Email has already been taken</string>
+    <string name="create">Create</string>
+
 </resources>

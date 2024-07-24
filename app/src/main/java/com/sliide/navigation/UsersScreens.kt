@@ -1,11 +1,11 @@
 package com.sliide.navigation
 
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.sliide.ui.users.UserListScreen
 import com.sliide.ui.users.UserListViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
 
 internal enum class UsersScreen {
     List
