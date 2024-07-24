@@ -14,12 +14,6 @@ internal class UsersApiProviderImpl @Inject constructor(
     private val accessToken: String
 ) : UsersApiProvider {
 
-    private val moshi by lazy {
-        Moshi.Builder()
-            .addLast(KotlinJsonAdapterFactory())
-            .build()
-    }
-
     private val retrofit by lazy {
         val clientBuilder = OkHttpClient()
             .newBuilder()
@@ -33,6 +27,10 @@ internal class UsersApiProviderImpl @Inject constructor(
         }
 
         val client = clientBuilder.build()
+        val moshi = Moshi.Builder()
+            .addLast(KotlinJsonAdapterFactory())
+            .build()
+
         val moshiConverterFactory = MoshiConverterFactory.create(moshi)
 
         Retrofit.Builder()
@@ -47,6 +45,4 @@ internal class UsersApiProviderImpl @Inject constructor(
     }
 
     override fun provideUsersApi(): UsersApi = usersApi
-
-    override fun provideMoshi(): Moshi = moshi
 }

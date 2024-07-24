@@ -6,10 +6,17 @@ import androidx.lifecycle.viewModelScope
 import com.sliide.common.DateTime
 import com.sliide.common.flatMap
 import com.sliide.data.users.UsersRepo
+import com.sliide.domain.users.ValidateUserInputCase
 import com.sliide.domain.users.models.CreateUserError
+import com.sliide.domain.users.models.CreateUserError.EmailExists
+import com.sliide.domain.users.models.CreateUserError.EmailInvalid
+import com.sliide.domain.users.models.CreateUserError.EmailRequired
+import com.sliide.domain.users.models.CreateUserError.EmailUnknown
+import com.sliide.domain.users.models.CreateUserError.NameRequired
+import com.sliide.domain.users.models.CreateUserError.NameUnknown
+import com.sliide.domain.users.models.CreateUserError.Unknown
 import com.sliide.domain.users.models.CreateUserThrowable
 import com.sliide.domain.users.models.User
-import com.sliide.domain.users.ValidateUserInputCase
 import com.sliide.ui.users.models.EmailError
 import com.sliide.ui.users.models.NameError
 import com.sliide.ui.users.models.UserItem
@@ -33,7 +40,7 @@ import kotlin.time.toDuration
 @HiltViewModel
 class UserListViewModel @Inject constructor(
     private val usersRepo: UsersRepo,
-    private val validateUserInputCase: ValidateUserInputCase,
+    private val validateInputCase: ValidateUserInputCase,
     private val dateTime: DateTime
 ) : ViewModel() {
 
@@ -51,7 +58,7 @@ class UserListViewModel @Inject constructor(
         viewModelScope.launch {
             mutableScreenState.value = UserListState.Loading
 
-            usersRepo.users()
+            usersRepo.lastUsers()
                 .onSuccess { users ->
                     val createdAt = dateTime.currentTimestamp()
                     val items = users.map { user -> user.toItem(Duration.ZERO, createdAt) }
@@ -154,7 +161,7 @@ class UserListViewModel @Inject constructor(
 
                 val name = dialog.name.trim()
                 val email = dialog.email.trim()
-                validateUserInputCase(name, email)
+                validateInputCase(name, email)
                     .flatMap { errors: Set<CreateUserError> ->
                         if (errors.isEmpty()) {
                             hideDialog()
@@ -171,7 +178,7 @@ class UserListViewModel @Inject constructor(
                     }
                     .onFailure { throwable: Throwable ->
                         mutableDialogs.value = if (throwable is CreateUserThrowable) {
-                            refreshDialogState(dialog, throwable.errors)
+                            handleErrors(dialog, throwable.errors)
                         } else {
                             Log.d(TAG, "failed create user: $name, $email", throwable)
                             unknownErrorChannel.send(throwable)
@@ -185,7 +192,7 @@ class UserListViewModel @Inject constructor(
         }
     }
 
-    private fun refreshDialogState(
+    private suspend fun handleErrors(
         dialog: UserListDialog.CreateUser,
         errors: Set<CreateUserError>
     ): UserListDialog {
@@ -195,10 +202,13 @@ class UserListViewModel @Inject constructor(
 
         errors.forEach { error ->
             when (error) {
-                CreateUserError.NameRequired -> nameError = NameError.NameRequired
-                CreateUserError.EmailRequired -> emailError = EmailError.EmailRequired
-                CreateUserError.EmailExists -> emailError = EmailError.EmailExists
-                CreateUserError.EmailInvalid -> emailError = EmailError.EmailFormat
+                NameRequired -> nameError = NameError.NameRequired
+                EmailRequired -> emailError = EmailError.EmailRequired
+                EmailExists -> emailError = EmailError.EmailExists
+                EmailInvalid -> emailError = EmailError.EmailFormat
+                NameUnknown,
+                EmailUnknown,
+                Unknown -> unknownErrorChannel.send(IllegalArgumentException())
             }
         }
 

@@ -30,11 +30,11 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sliide.R
 import com.sliide.ui.common.SingleEventEffect
-import com.sliide.ui.users.components.EmptyUsersListPlaceholder
 import com.sliide.ui.common.components.ErrorPlaceholder
 import com.sliide.ui.extensions.isScrollingUp
 import com.sliide.ui.users.components.CreateUserDialog
 import com.sliide.ui.users.components.DeleteUserDialog
+import com.sliide.ui.users.components.EmptyUsersListPlaceholder
 import com.sliide.ui.users.components.UsersList
 import com.sliide.ui.users.models.UserItem
 import com.sliide.ui.users.models.UserListDialog

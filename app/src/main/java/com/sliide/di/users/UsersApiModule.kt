@@ -4,7 +4,6 @@ import com.sliide.BuildConfig
 import com.sliide.data.users.UsersApi
 import com.sliide.data.users.UsersApiProvider
 import com.sliide.data.users.UsersApiProviderImpl
-import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,12 +24,5 @@ internal object UsersApiModule {
     @Singleton
     fun provideUsersApi(apiProvider: UsersApiProvider): UsersApi {
         return apiProvider.provideUsersApi()
-    }
-
-    @Provides
-    @Singleton
-    @UsersMoshi
-    fun provideMoshi(apiProvider: UsersApiProvider): Moshi {
-        return apiProvider.provideMoshi()
     }
 }
