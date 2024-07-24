@@ -40,6 +40,8 @@ import com.sliide.ui.users.models.UserItem
 import com.sliide.ui.users.models.UserListDialog
 import com.sliide.ui.users.models.UserListState
 import kotlinx.collections.immutable.persistentListOf
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 @Composable
 internal fun UserListScreen(
@@ -47,7 +49,10 @@ internal fun UserListScreen(
     close: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LifecycleEventEffect(Lifecycle.Event.ON_CREATE) { viewModel.refreshUsers() }
+    LifecycleEventEffect(Lifecycle.Event.ON_CREATE) {
+        viewModel.fetchUsers()
+        viewModel.startRefreshingUsers()
+    }
 
     val context = LocalContext.current
     val unknownError = stringResource(id = R.string.common_error_occurred)
@@ -86,7 +91,7 @@ internal fun UserListScreen(
         onCloseClick = close,
         onLongClick = viewModel::onLongClick,
         onFabClick = viewModel::onFabClick,
-        onFetchClick = viewModel::refreshUsers
+        onFetchClick = viewModel::fetchUsers
     )
 }
 
@@ -176,15 +181,40 @@ private fun PreviewUserListScreenLoading() {
 @Composable
 private fun PreviewUserListScreenItems() {
     val items = persistentListOf(
-        UserItem(id = 1L, name = "Harry Potter", "harry.potter@gmail.com", "30s ago"),
-        UserItem(id = 2L, name = "Hermione Granger", "hermione.granger@yahoo.com", ""),
-        UserItem(id = 3L, name = "Ron Weasley", "ronwh@aol.com", "1m ago"),
-        UserItem(id = 4L, name = "Tom Riddle", "tom.marvolo.riddle@outlook.com", "1h 32m ago"),
+        UserItem(
+            id = 1L,
+            name = "Harry Potter",
+            email = "harry.potter@gmail.com",
+            exists = 22.toDuration(DurationUnit.SECONDS),
+            createdAt = Long.MIN_VALUE
+        ),
+        UserItem(
+            id = 2L,
+            name = "Hermione Granger",
+            email = "hermione.granger@yahoo.com",
+            exists = 2.toDuration(DurationUnit.MINUTES),
+            createdAt = Long.MIN_VALUE
+        ),
+        UserItem(
+            id = 3L,
+            name = "Ron Weasley",
+            email = "ronwh@aol.com",
+            exists = 10.toDuration(DurationUnit.MINUTES),
+            createdAt = Long.MIN_VALUE
+        ),
+        UserItem(
+            id = 4L,
+            name = "Tom Riddle",
+            email = "tom.marvolo.riddle@outlook.com",
+            exists = 12.toDuration(DurationUnit.HOURS),
+            createdAt = Long.MIN_VALUE
+        ),
         UserItem(
             id = 5L,
             name = "Albus Percival Wulfric Brian Dumbledore",
-            "albus.percival.wulfric.brian.dumbledore@protonmail.com",
-            "1d ago"
+            email = "albus.percival.wulfric.brian.dumbledore@protonmail.com",
+            exists = 3.toDuration(DurationUnit.DAYS),
+            createdAt = Long.MIN_VALUE
         )
     )
 

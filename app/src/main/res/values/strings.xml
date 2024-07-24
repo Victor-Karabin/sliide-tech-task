@@ -3,10 +3,13 @@
 
     <!-- User Item -->
     <string name="ago">ago</string>
-    <string name="sec_short">s</string>
-    <string name="min_short">m</string>
-    <string name="hour_short">h</string>
-    <string name="day_short">d</string>
+    <string name="now">now</string>
+    <string name="minute_short">min</string>
+    <string name="minutes_short">mins</string>
+    <string name="hour">hour</string>
+    <string name="hours">hours</string>
+    <string name="day">day</string>
+    <string name="days">days</string>
 
     <!-- Errors -->
     <string name="common_error_occurred">Sorry, an error occurred. Please try again later.</string>

@@ -12,6 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.sliide.ui.users.models.UserItem
+import com.sliide.ui.users.toCreatedAgoText
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -39,15 +42,12 @@ internal fun UserItem(
             color = Color.Blue
         )
 
-        if (item.created.isNotEmpty()) {
-
-            Text(
-                modifier = Modifier.align(Alignment.End),
-                text = item.created,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
+        Text(
+            modifier = Modifier.align(Alignment.End),
+            text = item.exists.toCreatedAgoText(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.outline
+        )
     }
 }
 
@@ -59,8 +59,9 @@ private fun PreviewUserItem() {
         item = UserItem(
             id = 1L,
             name = "Albus Percival Wulfric Brian Dumbledore",
-            "albus.percival.wulfric.brian.dumbledore@protonmail.com",
-            "1d ago"
+            email = "albus.percival.wulfric.brian.dumbledore@protonmail.com",
+            exists = 2.toDuration(DurationUnit.DAYS),
+            createdAt = Long.MIN_VALUE
         ),
         onLongClick = {}
     )

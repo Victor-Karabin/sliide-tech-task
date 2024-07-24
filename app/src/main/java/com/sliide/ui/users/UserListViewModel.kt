@@ -3,6 +3,7 @@ package com.sliide.ui.users
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sliide.common.DateTime
 import com.sliide.common.flatMap
 import com.sliide.data.users.UsersRepo
 import com.sliide.domain.users.models.CreateUserError
@@ -17,17 +18,23 @@ import com.sliide.ui.users.models.UserListState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 @HiltViewModel
 class UserListViewModel @Inject constructor(
     private val usersRepo: UsersRepo,
-    private val validateUserInputCase: ValidateUserInputCase
+    private val validateUserInputCase: ValidateUserInputCase,
+    private val dateTime: DateTime
 ) : ViewModel() {
 
     private val mutableScreenState = MutableStateFlow<UserListState>(UserListState.Loading)
@@ -40,19 +47,40 @@ class UserListViewModel @Inject constructor(
     internal val unknownError: Flow<Throwable>
         get() = unknownErrorChannel.receiveAsFlow()
 
-    internal fun refreshUsers() {
+    internal fun fetchUsers() {
         viewModelScope.launch {
             mutableScreenState.value = UserListState.Loading
 
             usersRepo.users()
                 .onSuccess { users ->
-                    val items = users.map { user -> user.toItem("") }.toImmutableList()
+                    val createdAt = dateTime.currentTimestamp()
+                    val items = users.map { user -> user.toItem(Duration.ZERO, createdAt) }
+                        .toImmutableList()
                     mutableScreenState.value = UserListState.Items(items)
                 }
                 .onFailure { throwable ->
                     Log.d(TAG, "failed refresh users", throwable)
                     mutableScreenState.value = UserListState.Error()
                 }
+        }
+    }
+
+    internal fun startRefreshingUsers() {
+        viewModelScope.launch {
+            while (viewModelScope.isActive) {
+                delay(REFRESH_EXISTS_DELAY)
+
+                val state = screenState.value
+                if (state is UserListState.Items) {
+                    val now = dateTime.currentTimestamp()
+                    val refreshed = state.items.map { item ->
+                        val exists = (now - item.createdAt).toDuration(DurationUnit.MILLISECONDS)
+                        item.copy(exists = exists)
+                    }.toImmutableList()
+
+                    mutableScreenState.value = UserListState.Items(refreshed)
+                }
+            }
         }
     }
 
@@ -138,15 +166,16 @@ class UserListViewModel @Inject constructor(
                     }
                     .onSuccess { user ->
                         val items = prevItems.toMutableList()
-                        items.add(0, user.toItem(""))
+                        items.add(0, user.toItem(Duration.ZERO, dateTime.currentTimestamp()))
                         mutableScreenState.value = UserListState.Items(items.toImmutableList())
                     }
                     .onFailure { throwable: Throwable ->
-                        if (throwable is CreateUserThrowable) {
-                            handleErrors(dialog, throwable.errors)
+                        mutableDialogs.value = if (throwable is CreateUserThrowable) {
+                            refreshDialogState(dialog, throwable.errors)
                         } else {
                             Log.d(TAG, "failed create user: $name, $email", throwable)
                             unknownErrorChannel.send(throwable)
+                            dialog
                         }
                         mutableScreenState.value = state
                     }
@@ -156,7 +185,11 @@ class UserListViewModel @Inject constructor(
         }
     }
 
-    private fun handleErrors(dialog: UserListDialog.CreateUser, errors: Set<CreateUserError>) {
+    private fun refreshDialogState(
+        dialog: UserListDialog.CreateUser,
+        errors: Set<CreateUserError>
+    ): UserListDialog {
+
         var nameError = NameError.None
         var emailError = EmailError.None
 
@@ -169,10 +202,11 @@ class UserListViewModel @Inject constructor(
             }
         }
 
-        mutableDialogs.value = dialog.copy(nameError = nameError, emailError = emailError)
+        return dialog.copy(nameError = nameError, emailError = emailError)
     }
 
     private companion object {
         private const val TAG = "USERS"
+        private const val REFRESH_EXISTS_DELAY = 60_000L // 1 min
     }
 }

@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import com.sliide.ui.users.models.UserItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 @Composable
 internal fun UsersList(
@@ -50,15 +52,40 @@ internal fun UsersList(
 @Composable
 private fun PreviewUsersList() {
     val items = persistentListOf(
-        UserItem(id = 1L, name = "Harry Potter", "harry.potter@gmail.com", "now"),
-        UserItem(id = 2L, name = "Hermione Granger", "hermione.granger@yahoo.com", "2m ago"),
-        UserItem(id = 3L, name = "Ron Weasley", "ronwh@aol.com", "10m ago"),
-        UserItem(id = 4L, name = "Tom Riddle", "tom.marvolo.riddle@outlook.com", "1h ago"),
+        UserItem(
+            id = 1L,
+            name = "Harry Potter",
+            email = "harry.potter@gmail.com",
+            exists = 22.toDuration(DurationUnit.SECONDS),
+            createdAt = Long.MIN_VALUE
+        ),
+        UserItem(
+            id = 2L,
+            name = "Hermione Granger",
+            email = "hermione.granger@yahoo.com",
+            exists = 2.toDuration(DurationUnit.MINUTES),
+            createdAt = Long.MIN_VALUE
+        ),
+        UserItem(
+            id = 3L,
+            name = "Ron Weasley",
+            email = "ronwh@aol.com",
+            exists = 10.toDuration(DurationUnit.MINUTES),
+            createdAt = Long.MIN_VALUE
+        ),
+        UserItem(
+            id = 4L,
+            name = "Tom Riddle",
+            email = "tom.marvolo.riddle@outlook.com",
+            exists = 12.toDuration(DurationUnit.HOURS),
+            createdAt = Long.MIN_VALUE
+        ),
         UserItem(
             id = 5L,
             name = "Albus Percival Wulfric Brian Dumbledore",
-            "albus.percival.wulfric.brian.dumbledore@protonmail.com",
-            "1d ago"
+            email = "albus.percival.wulfric.brian.dumbledore@protonmail.com",
+            exists = 3.toDuration(DurationUnit.DAYS),
+            createdAt = Long.MIN_VALUE
         )
     )
 

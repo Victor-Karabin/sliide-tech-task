@@ -7,9 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun MainContent(
-    content: @Composable () -> Unit
-) {
+fun MainContent(content: @Composable () -> Unit) {
     SliideTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
