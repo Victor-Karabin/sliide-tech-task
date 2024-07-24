@@ -32,3 +32,8 @@ The method lastUsers() is used. But if there is a misunderstanding, please, chec
 * For running Android Tests from the commandline, run ./gradlew cAT
 * For debugging TransactionTooLargeExceptions, run adb logcat -s TooLargeTool
 * For debugging memory leaks, run adb logcat -s LeakCanary
+
+# Test coverage
+Quite a lot of functionality and code. Covering it completely with tests would take too long,
+obviously more time than specified in the requirements.
+So, domain layer is covered, date and UI layers are partially covered.
